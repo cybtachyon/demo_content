@@ -1,0 +1,4 @@
+name = Demo Content
+description = Provides a system to import demo content.
+package = Development
+core = 7.x
