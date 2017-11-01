@@ -23,7 +23,7 @@ function demo_content_drush_command() {
     ),
     'examples' => array(
       'demo-content-import mymodule --filter=node.article' =>
-      'Import only the node.article demo file from the custom module mymodule.',
+        'Import only the node.article demo file from the custom module mymodule.',
     ),
   );
   return $items;
@@ -61,18 +61,25 @@ function drush_demo_content_import($module) {
       LogLevel::ERROR);
     return;
   }
-  $demo_path = DRUPAL_ROOT . '/' . $info['project path'] . "/$module";
+  $demo_path = DRUPAL_ROOT
+    . DIRECTORY_SEPARATOR
+    . drupal_get_path('module', $module);
   $ci = array();
   foreach ($demo_content as $demo_file) {
-    $result = json_content_import($demo_path, $demo_file);
+    $result = FALSE;
+    try {
+      $result = json_content_import($demo_path, $demo_file);
+    }
+    catch (RuntimeException $exception) {
+      $errors[] = $exception;
+    }
     if (is_array($result)) {
       /** @var array[] $ci */
       $ci += $result;
     }
   }
-  if (!empty($ci['errors'])) {
-    /** @var \Exception $error */
-    foreach ($ci['errors'] as $error) {
+  if (!empty($errors)) {
+    foreach ($errors as $error) {
       drush_log($error->getMessage(), LogLevel::WARNING);
     }
     drush_log(dt('Error importing demo_content from @module. See log for info.',
