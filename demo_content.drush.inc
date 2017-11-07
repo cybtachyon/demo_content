@@ -23,7 +23,7 @@ function demo_content_drush_command() {
     ),
     'examples' => array(
       'demo-content-import mymodule --filter=node.article' =>
-        'Import only the node.article demo file from the custom module mymodule.',
+      'Import only the node.article demo file from the custom module mymodule.',
     ),
   );
   return $items;
@@ -65,6 +65,7 @@ function drush_demo_content_import($module) {
     . DIRECTORY_SEPARATOR
     . drupal_get_path('module', $module);
   $ci = array();
+  $ci_count = 0;
   foreach ($demo_content as $demo_file) {
     $result = FALSE;
     try {
@@ -73,10 +74,17 @@ function drush_demo_content_import($module) {
     catch (RuntimeException $exception) {
       $errors[] = $exception;
     }
-    if (is_array($result)) {
-      /** @var array[] $ci */
-      $ci += $result;
+    if (!is_array($result)) {
+      continue;
     }
+    foreach ($result as $type => $content) {
+      $ids = array_keys($content);
+      $ci[$type][$ids[0]] = $content;
+      $ci_count++;
+    }
+  }
+  if (empty($ci)) {
+    $errors[] = new RuntimeException('No demo content found.');
   }
   if (!empty($errors)) {
     foreach ($errors as $error) {
@@ -89,8 +97,8 @@ function drush_demo_content_import($module) {
   $count = count($ci);
   $message = format_plural(
     $count,
-    'Successfully imported one content type from @module.',
-    'Successfully imported @count content types from @module.',
-    array('@module' => $module));
+    'Successfully imported one content type, @ci content from @module.',
+    'Successfully imported @count content types, @ci content from @module.',
+    array('@module' => $module, '@ci' => $ci_count));
   drush_log($message, LogLevel::OK);
 }
